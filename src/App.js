@@ -1,86 +1,96 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import Section from "./components/Section/Section";
 import Form from "./components/Form/Form";
 import Filter from "./components/Filter/Filter";
 import Contacts from "./components/Contacts/Contacts";
+import { v4 as uuid } from "uuid";
+
 import "./App.css";
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
-      { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
-      { id: "id-3", name: "Eden Clements", number: "645-17-79" },
-      { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
-    ],
-    filter: "",
-  };
-  // 1. объяви state
-  // 2. объяви методы которые этот state изменяют :getContact(),getFilterContact()
-  // 3. передай ссылки на них в обработчики событий в элементе   <Form getContact={this.getContact} />
-  getContact = (firstContact) => {
-    const { contacts } = this.state;
-    const originalContact = contacts.find(
-      (contact) => contact.name === firstContact.name
+export default function App() {
+  const [contacts, setContacts] = useLocalStorage("contacts", [
+    { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
+    { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
+    { id: "id-3", name: "Eden Clements", number: "645-17-79" },
+    { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
+  ]);
+
+  const [filter, setFilter] = useState("");
+
+  function useLocalStorage(key, defaultValue) {
+    const [state, setState] = useState(() => {
+      return JSON.parse(window.localStorage.getItem(key)) ?? defaultValue;
+    });
+
+    useEffect(() => {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    }, [key, state]);
+
+    return [state, setState];
+  }
+
+  const addContact = (name, number) => {
+    const item = {
+      id: uuid(),
+      name,
+      number,
+    };
+
+    const includeName = contacts.reduce(
+      (acc, contact) => [...acc, contact.name],
+      []
     );
-    originalContact
-      ? alert(`${originalContact.name} is already in contacts.`)
-      : this.setState({ contacts: [firstContact, ...contacts] });
-  };
-
-  getFilterContact = (e) => {
-    this.setState({ filter: e.target.value });
-  };
-
-  filteredContact = () => {
-    return this.state.filter
-      ? this.state.contacts.filter((el) =>
-          el.name.toLowerCase().includes(this.state.filter.toLowerCase())
-        )
-      : this.state.contacts;
-  };
-
-  deleteContact = (contactId) => {
-    this.setState((prev) => ({
-      contacts: prev.contacts.filter((contact) => contact.id !== contactId),
-      // берем предидущий массив контактов , фильтруем, и в новый массив собираем лишь те id которых не равен переданому id.
-      // и кидаем в Компонент Контактов ссылку на этот метод, а Компонет передает через пропсы id
-    }));
-  };
-
-  componentDidMount() {
-    const parsedContacts = JSON.parse(localStorage.getItem("contacts"));
-    if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
-    }
-  }
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem("contacts", JSON.stringify(this.state.contacts));
-    }
-  }
-
-  render() {
-    // Паттерн : деструктуриация пропов и стейтов в методе рендер
-    const { filter } = this.state;
-    return (
-      <>
-        <Section title="Phonebook">
-          <Form getContact={this.getContact} />
-        </Section>
-        <Section title="Contacts">
-          <Filter filter={filter} getFilterContact={this.getFilterContact} />
-          <Contacts
-            contactList={this.filteredContact()}
-            deleteContact={this.deleteContact}
-          />
-        </Section>
-      </>
+    const includeNumber = contacts.reduce(
+      (acc, contact) => [...acc, contact.number],
+      []
     );
-  }
+
+    if (name === "" || number === "") {
+      alert("Please enter all fields!");
+      return;
+    }
+
+    if (includeName.includes(name)) {
+      alert(`${name} is already in contacts`);
+      return;
+    } else if (includeNumber.includes(number)) {
+      alert(`${number} is already in contacts`);
+    } else {
+      setContacts((contacts) => [item, ...contacts]);
+    }
+  };
+
+  const getVisibleContacts = () => {
+    const normalizedFilter = filter.toLowerCase();
+
+    return contacts.filter((contact) =>
+      contact.name.toLowerCase().includes(normalizedFilter)
+    );
+  };
+
+  const deleteContact = (contactId) => {
+    setContacts((prevState) =>
+      prevState.filter((contact) => contact.id !== contactId)
+    );
+  };
+
+  const changeFilter = (event) => {
+    setFilter(event.currentTarget.value);
+  };
+
+  return (
+    <>
+      <Section>
+        <h1>Phonebook</h1>
+        <Form contacts={contacts} onSubmit={addContact} />
+
+        <h2>Contacts</h2>
+        <Filter value={filter} onChange={changeFilter} />
+        <Contacts
+          contacts={getVisibleContacts()}
+          deleteContact={deleteContact}
+        />
+      </Section>
+    </>
+  );
 }
-// Компоненты пере рендериваются в двух случаях : если в них приходят новые props или изменяются внутреннее состояние(state). при изменинии state каждый раз вызывается метод render()
-
-// функциональные Компоненты(без хуков) пере рендериваются только тогда когда в них приходят новые props
-
-export default App;

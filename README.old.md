@@ -26,4 +26,4 @@
 
    Published
 
-8.
+8. npm i uuid
