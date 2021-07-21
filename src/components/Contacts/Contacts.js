@@ -1,9 +1,9 @@
 import PropTypes from "prop-types";
 import styles from "./Contacts.module.css";
 
-const Contacts = ({ contactList, deleteContact }) => (
+const Contacts = ({ contacts, deleteContact }) => (
   <ul>
-    {contactList.map((contact) => (
+    {contacts.map((contact) => (
       <li key={contact.id} className={styles.links}>
         <p>{contact.name}</p>
         <p>{contact.number}</p>

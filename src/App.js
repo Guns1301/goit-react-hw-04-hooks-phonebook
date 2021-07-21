@@ -80,11 +80,10 @@ export default function App() {
 
   return (
     <>
-      <Section>
-        <h1>Phonebook</h1>
+      <Section title="Phonebook">
         <Form contacts={contacts} onSubmit={addContact} />
-
-        <h2>Contacts</h2>
+      </Section>
+      <Section title="Contacts">
         <Filter value={filter} onChange={changeFilter} />
         <Contacts
           contacts={getVisibleContacts()}
